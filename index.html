@@ -95,7 +95,7 @@ body{
 }
 
 /* ======================
-   カード基本
+   カード
 ====================== */
 .card{
     width:60px;
@@ -110,7 +110,6 @@ body{
     align-items:center;
     justify-content:center;
 
-    /* ★ 追加：操作感向上 */
     transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
@@ -142,9 +141,7 @@ body{
     padding:2px 0
 }
 
-/* ======================
-   ★ 選択中カード演出
-====================== */
+/* ★ 選択中演出 */
 .card.selected{
     transform: translateY(-12px);
     border-color:#f1c40f;
@@ -154,12 +151,14 @@ body{
     z-index:50;
 }
 
-/* ホバー時（未選択のみ） */
 .card:not(.selected):hover{
     transform: translateY(-4px);
     box-shadow:0 4px 8px rgba(0,0,0,0.5);
 }
 
+/* ======================
+   中央UI
+====================== */
 #battle-center{
     height:20%;
     background:rgba(0,0,0,.7);
@@ -170,6 +169,7 @@ body{
     z-index:10
 }
 
+/* ★ 決定ボタン修正ポイント */
 .decide-btn{
     width:150px;
     height:40px;
@@ -179,7 +179,10 @@ body{
     background:#e74c3c;
     color:#fff;
     font-weight:700;
-    cursor:pointer
+    cursor:pointer;
+
+    position:relative;
+    z-index:200;   /* ← これが重要 */
 }
 
 .waiting{
@@ -237,7 +240,6 @@ body{
 </div>
 
 <script>
-// ==== 元コードそのまま ====
 const library={
 '火':['https://livedoor.blogimg.jp/pokeruto_narutostorm/imgs/9/d/9df794cc.png'],
 '水':['https://ooyake01.com/wp-content/uploads/2019/07/%E6%89%89%E9%96%93.png'],
@@ -300,5 +302,6 @@ function renderHands(){
     }
 }
 </script>
+
 </body>
 </html>
