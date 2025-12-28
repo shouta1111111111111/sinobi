@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>忍術バトル Ver.20 (ルール最終修正版)</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>忍術バトル Ver.21 (判定優先度・完全修正版)</title><style>
 body{font-family:sans-serif;text-align:center;background:#1a1a1a;color:#fff;margin:0;overflow:hidden;height:100vh;display:flex;flex-direction:column}
 #menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;overflow-y:auto}
 .btn-group{display:flex;flex-direction:column;gap:10px;margin-bottom:15px}
@@ -23,7 +23,7 @@ body{font-family:sans-serif;text-align:center;background:#1a1a1a;color:#fff;marg
 </style></head><body>
 
 <div id="menu-screen">
-    <h2>忍術バトル Ver.20</h2>
+    <h2>忍術バトル Ver.21</h2>
     <div class="btn-group">
         <button id="m-norm" class="mode-btn selected" onclick="selMode('N')">ノーマル (3戦)</button>
         <button id="m-adv" class="mode-btn" onclick="selMode('A')">アドバンス (5戦)</button>
@@ -89,6 +89,7 @@ function initGame(){
     hands={1:[...types],2:[...types]}; scores={1:0,2:0}; selected={1:[],2:[]}; confirmed={1:!1,2:!1};
     turn=1; firstPt=null; bannedStr=null; p1D=[]; p2D=[];
     document.getElementById('status-msg').innerText="修行開始！";
+    document.getElementById('last-moves').innerText="P1: ? vs P2: ?";
     document.getElementById('p2-btn').style.visibility=(pMode==='C')?'hidden':'visible';
     unlockArea(1); unlockArea(2); renderHands();
 }
@@ -170,23 +171,35 @@ function judgeFinal(){
     let w = 0;
     let reason = "";
 
-    // 1. スコア比較
-    if(scores[1] > scores[2]) { w=1; reason="ポイント優勢"; }
-    else if(scores[2] > scores[1]) { w=2; reason="ポイント優勢"; }
-    else {
-        // 2. スコアが同点なら残った手札の枚数
-        if(hands[1].length > hands[2].length) { w=1; reason="残りの手札（巻物）の枚数で勝利"; }
-        else if(hands[2].length > hands[1].length) { w=2; reason="残りの手札（巻物）の枚数で勝利"; }
-        else {
-            // 3. 手札枚数も同じならポイント先取
-            if(firstPt === 1) { w=1; reason="同点・同手札数ですが、先取点により勝利"; }
-            else if(firstPt === 2) { w=2; reason="同点・同手札数ですが、先取点により勝利"; }
-            else { w=0; reason="完全なる引き分け"; }
+    // 【最優先】スコア比較
+    if(scores[1] > scores[2]) {
+        w = 1; reason = "ポイント優勢";
+    } else if (scores[2] > scores[1]) {
+        w = 2; reason = "ポイント優勢";
+    } else {
+        // 【第2優先】手札の残数（巻物数）
+        if(hands[1].length > hands[2].length) {
+            w = 1; reason = "同点ですが、残りの手札（巻物）の数が多いため勝利！";
+        } else if (hands[2].length > hands[1].length) {
+            w = 2; reason = "同点ですが、残りの手札（巻物）の数が多いため勝利！";
+        } else {
+            // 【第3優先】ポイント先取
+            if(firstPt === 1) {
+                w = 1; reason = "同点・同手札数ですが、先取点により勝利！";
+            } else if (firstPt === 2) {
+                w = 2; reason = "同点・同手札数ですが、先取点により勝利！";
+            } else {
+                w = 0; reason = "完全なる引き分け";
+            }
         }
     }
 
-    let resultMsg = (w === 0) ? reason : `勝者: プレイヤー${w}\n(${reason})`;
-    alert(`試合終了！\n${resultMsg}\n[スコア] P1:${scores[1]} - P2:${scores[2]}\n[残手札] P1:${hands[1].length} - P2:${hands[2].length}`);
+    let resultMsg = (w === 0) ? reason : `勝者: プレイヤー${w}\n判定理由: ${reason}`;
+    
+    // 詳細な内訳を出すことで、判定が正しいことをユーザーに示します
+    const details = `\n-- 対戦データ --\nスコア: P1(${scores[1]}) - P2(${scores[2]})\n残手札: P1(${hands[1].length}枚) - P2(${hands[2].length}枚)\n先取点: ${firstPt ? 'P'+firstPt : 'なし'}`;
+    
+    alert(`試合終了！\n${resultMsg}\n${details}`);
     document.getElementById('menu-screen').style.display='flex';
 }
 
