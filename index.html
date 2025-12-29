@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>忍術バトル Ver.33</title><style>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>忍術バトル Ver.34</title><style>
 :root { --p1-color: #e74c3c; --p2-color: #3498db; --select-color: #f1c40f; }
 body{font-family:sans-serif;text-align:center;background:#1a1a1a;color:#fff;margin:0;overflow:hidden;height:100vh;display:flex;flex-direction:column;user-select:none;}
 #menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
@@ -22,10 +22,10 @@ body{font-family:sans-serif;text-align:center;background:#1a1a1a;color:#fff;marg
 </style></head><body>
 
 <div id="menu-screen">
-    <h1 style="color:var(--select-color);">忍術バトル Ver.33</h1>
+    <h1 style="color:var(--select-color);">忍術バトル Ver.34</h1>
     <div class="btn-group">
-        <button id="m-norm" class="mode-btn selected" onclick="selMode('N')">ノーマル (3戦/2勝終了)</button>
-        <button id="m-adv" class="mode-btn" onclick="selMode('A')">アドバンス (5戦/2勝終了)</button>
+        <button id="m-norm" class="mode-btn selected" onclick="selMode('N')">ノーマル (3戦固定/2勝終了)</button>
+        <button id="m-adv" class="mode-btn" onclick="selMode('A')">アドバンス (5戦/弾切終了)</button>
     </div>
     <div class="btn-group">
         <button id="p-com" class="mode-btn selected" onclick="selPlay('C')">1人 (vs COM)</button>
@@ -77,10 +77,14 @@ function renderHands(){
 function confirmMove(p){
     const s = selected[p].sort((a,b)=>typeOrd[a]-typeOrd[b]);
     const comboStr = s.join("+");
+    
+    // 【バリデーション強化】
     if(s.length===0) return;
+    if(s.length===2 && !(s.includes('水') && s.includes('風'))){ alert("2枚出しは「氷遁(水+風)」のみ！"); return; }
+    if(s.length===3 && !(s.includes('火') && s.includes('風') && s.includes('土'))){ alert("3枚出しは「塵遁(火+風+土)」のみ！"); return; }
+    if(s.length > 3){ alert("4枚以上の同時出しはできません！"); return; }
     if(comboStr === bannedStr){ alert(`封印中：${bannedStr} 以外を出せ！`); return; }
-    if(s.length===2 && !(s.includes('水') && s.includes('風'))){ alert("氷遁のみ可！"); return; }
-    if(s.length===3 && !(s.includes('火') && s.includes('風') && s.includes('土'))){ alert("塵遁のみ可！"); return; }
+
     if(p===1) p1D=[...s]; else p2D=[...s];
     confirmed[p]=!0; selected[p]=[]; renderHands(); lockArea(p);
     if(confirmed[1]){ if(pMode==='C') setTimeout(comLogic, 500); else if(confirmed[2]) battle(); }
@@ -108,32 +112,27 @@ function battle(){
         document.getElementById('status-msg').innerText = `P${win}の勝利！`;
         consumeCards(m1, m2);
     } else {
-        // あいこ時の処理
-        if (s1 === s2) { // 同じ手
+        if (s1 === s2) { 
             if (gMode === 'N') {
-                if (turn === 3) { // ★修正：ノーマルの3戦目（最終戦）なら消費して終了
-                    document.getElementById('status-msg').innerText = "3戦目引き分け(消費)"; consumeCards(m1, m2);
-                } else { // それ以外（1,2戦目）は出し直し
-                    document.getElementById('status-msg').innerText = "同じ手であいこ！出し直し";
-                    bannedStr = null; resetTurn(); return;
-                }
-            } else if (gMode === 'A' && turn === 1) { // アドバンス：1戦目のみ封印出し直し
-                bannedStr = s1; document.getElementById('status-msg').innerText = `1戦目あいこ！[${bannedStr}]封印・出し直し`;
-                resetTurn(); return;
-            } else { // アドバンス：2戦目以降、または違う手 -> 消費
-                document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2);
-            }
-        } else { // 違う手の引き分け（常に消費）
-            document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2);
-        }
+                if (turn === 3) { document.getElementById('status-msg').innerText = "3戦目引き分け(消費)"; consumeCards(m1, m2); }
+                else { document.getElementById('status-msg').innerText = "あいこ！出し直し"; bannedStr = null; resetTurn(); return; }
+            } else if (gMode === 'A' && turn === 1) { 
+                bannedStr = s1; document.getElementById('status-msg').innerText = `1戦目[${bannedStr}]封印！`; resetTurn(); return;
+            } else { document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2); }
+        } else { document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2); }
     }
 
     renderHands();
     
-    // 決着判定
+    // 【終了判定の厳格化】
     let isGameOver = false;
-    const limit = (gMode === 'N') ? 3 : 5;
-    if (scores[1] >= 2 || scores[2] >= 2 || turn > limit || hands[1].length === 0) isGameOver = true;
+    if (gMode === 'N') {
+        // ノーマル：2勝するか、3戦終わるか
+        if (scores[1] >= 2 || scores[2] >= 2 || turn > 3) isGameOver = true;
+    } else {
+        // アドバンス：2勝するか、5戦終わるか、★どちらかの手札が尽きたら終了
+        if (scores[1] >= 2 || scores[2] >= 2 || turn > 5 || hands[1].length === 0 || hands[2].length === 0) isGameOver = true;
+    }
 
     if(isGameOver) setTimeout(judgeFinal, 600);
     else setTimeout(resetTurn, 800);
@@ -152,15 +151,15 @@ function judgeFinal(){
     if (scores[1] > scores[2]) { w = 1; res = "スコア優勢"; }
     else if (scores[2] > scores[1]) { w = 2; res = "スコア優勢"; }
     else {
-        if (hands[1].length > hands[2].length) { w = 1; res = "同点ですが、手札残数(巻物)により勝利！"; }
-        else if (hands[2].length > hands[1].length) { w = 2; res = "同点ですが、手札残数(巻物)により勝利！"; }
+        if (hands[1].length > hands[2].length) { w = 1; res = "手札残数により勝利！"; }
+        else if (hands[2].length > hands[1].length) { w = 2; res = "手札残数により勝利！"; }
         else {
             if (firstPt === 1) { w = 1; res = "先取点により勝利！"; }
             else if (firstPt === 2) { w = 2; res = "先取点により勝利！"; }
             else { w = 0; res = "完全な引き分け"; }
         }
     }
-    alert(`【試合終了】\n勝者: ${w===0?'なし': 'プレイヤー'+w}\n理由: ${res}\n\nP1: ${scores[1]}点 (残:${hands[1].length})\nP2: ${scores[2]}点 (残:${hands[2].length})`);
+    alert(`【決着】\n勝者: ${w===0?'なし': 'プレイヤー'+w}\n理由: ${res}\n\nP1: ${scores[1]}点 (残:${hands[1].length})\nP2: ${scores[2]}点 (残:${hands[2].length})`);
     document.getElementById('menu-screen').style.display='flex';
 }
 function lockArea(p){ document.getElementById(`p${p}-area`).classList.add('waiting'); }
