@@ -1,131 +1,168 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>忍術バトル Ver.22</title>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"><title>忍術バトル Ver.33</title><style>
+:root { --p1-color: #e74c3c; --p2-color: #3498db; --select-color: #f1c40f; }
+body{font-family:sans-serif;text-align:center;background:#1a1a1a;color:#fff;margin:0;overflow:hidden;height:100vh;display:flex;flex-direction:column;user-select:none;}
+#menu-screen{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.95);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;}
+.btn-group{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.mode-btn{width:260px;padding:12px;font-size:1rem;background:#444;color:#fff;border:2px solid #666;border-radius:10px;cursor:pointer;font-weight:700;}
+.mode-btn.selected{background:var(--p1-color);border-color:#fff;box-shadow:0 0 15px var(--p1-color);}
+.start-btn{width:220px;padding:18px;background:#27ae60;color:#fff;border:none;border-radius:40px;font-size:1.3rem;font-weight:700;cursor:pointer;}
+.player-area{height:40%;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:10px;position:relative;}
+#p2-area{transform:rotate(180deg);border-bottom:2px solid #333}#p1-area{border-top:2px solid #333}
+.hand{display:flex;justify-content:center;gap:10px;min-height:110px;width:100%;align-items: flex-end;}
+.card { width: 65px; height: 90px; border: 2px solid #fff; border-radius: 10px; cursor: pointer; overflow: hidden; position: relative; transition: transform 0.2s; background-color: #444; }
+.card[data-type="火"]{background-color:#d32f2f}.card[data-type="水"]{background-color:#1976d2}.card[data-type="土"]{background-color:#f57c00}.card[data-type="風"]{background-color:#388e3c}.card[data-type="雷"]{background-color:#fbc02d}
+.card img{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;z-index:1;pointer-events:none;}
+.card-label{font-size:16px;font-weight:900;z-index:2;text-shadow:2px 2px 4px #000;background:rgba(0,0,0,0.4);width:100%;padding:3px 0;position:absolute;bottom:0;}
+.card.selected { transform: translateY(-20px); border: 3px solid var(--select-color); box-shadow: 0 0 15px var(--select-color); z-index: 10; }
+#battle-center{height:20%;background:rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50}
+.decide-btn{width:150px;height:40px;font-size:1.1rem;border-radius:20px;border:none;background:var(--p1-color);color:#fff;font-weight:700;cursor:pointer;}
+.waiting{opacity:0.2; pointer-events:none;}
+#flash-div{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2000;pointer-events:none;}
+@keyframes flash{0%{opacity:0}50%{background:#fff;opacity:0.5}100%{opacity:0}}
+</style></head><body>
 
-<style>
-body{
-    margin:0;
-    background:#1a1a1a;
-    color:#fff;
-    height:100vh;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    font-family:sans-serif;
-}
-
-.player-area{
-    height:40%;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-}
-
-#battle-center{
-    height:20%;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    background:rgba(0,0,0,.7);
-}
-
-.hand{
-    display:flex;
-    gap:8px;
-}
-
-.card{
-    width:60px;
-    height:82px;
-    border:2px solid #fff;
-    border-radius:8px;
-    position:relative;
-    cursor:pointer;
-    overflow:hidden;
-}
-
-/* ★ P2だけカードを回転（親は回さない） */
-#p2-hand .card{
-    transform: rotate(180deg);
-}
-
-.card img{
-    width:100%;
-    height:100%;
-    object-fit:cover;
-}
-
-.card-label{
-    position:absolute;
-    bottom:0;
-    width:100%;
-    text-align:center;
-    background:rgba(0,0,0,.4);
-    font-weight:bold;
-}
-
-.decide-btn{
-    margin:10px 0;
-    width:150px;
-    height:40px;
-    border-radius:20px;
-    border:none;
-    background:#e74c3c;
-    color:#fff;
-    font-size:1.1rem;
-    font-weight:bold;
-    cursor:pointer;
-    touch-action:manipulation;
-}
-</style>
-</head>
-
-<body>
-
-<div id="p2-area" class="player-area">
-    <div id="p2-hand" class="hand"></div>
-    <button class="decide-btn" onclick="alert('P2 決定')">決定</button>
+<div id="menu-screen">
+    <h1 style="color:var(--select-color);">忍術バトル Ver.33</h1>
+    <div class="btn-group">
+        <button id="m-norm" class="mode-btn selected" onclick="selMode('N')">ノーマル (3戦/2勝終了)</button>
+        <button id="m-adv" class="mode-btn" onclick="selMode('A')">アドバンス (5戦/2勝終了)</button>
+    </div>
+    <div class="btn-group">
+        <button id="p-com" class="mode-btn selected" onclick="selPlay('C')">1人 (vs COM)</button>
+        <button id="p-pvp" class="mode-btn" onclick="selPlay('P')">2人 (対面バトル)</button>
+    </div>
+    <button class="start-btn" onclick="applyStart()">修行開始！</button>
 </div>
 
+<div id="flash-div"></div>
+<div id="p2-area" class="player-area"><div id="p2-hand" class="hand"></div><button id="p2-btn" class="decide-btn" onclick="confirmMove(2)">決定</button></div>
 <div id="battle-center">
-    忍術バトル
+    <div id="status-msg" style="color:var(--select-color); font-weight:bold;">いざ勝負！</div>
+    <div id="last-moves" style="font-size:0.9rem; margin:5px 0;">P1: ? vs P2: ?</div>
+    <div id="score-line" style="font-size:1.1rem; font-weight:bold;">P1: 0 | P2: 0</div>
 </div>
-
-<div id="p1-area" class="player-area">
-    <button class="decide-btn" onclick="alert('P1 決定')">決定</button>
-    <div id="p1-hand" class="hand"></div>
-</div>
+<div id="p1-area" class="player-area"><button id="p1-btn" class="decide-btn" onclick="confirmMove(1)">決定</button><div id="p1-hand" class="hand"></div></div>
 
 <script>
-const icons={
-火:'https://livedoor.blogimg.jp/pokeruto_narutostorm/imgs/9/d/9df794cc.png',
-水:'https://ooyake01.com/wp-content/uploads/2019/07/%E6%89%89%E9%96%93.png',
-土:'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQgUZKzoGoqlDT7mUC9X8fE76pwS8yTZOsQJWSf0JLyzQ&s',
-風:'https://otakotaku.com/asset/img/character/2017/10/uzumaki-naruto-59dbafb3a0d9ep.jpg',
-雷:'https://images-na.ssl-images-amazon.com/images/I/71rse6gO0XL._CR550,250,1420,1420_.jpg'
-};
+const icons = {'火':'https://livedoor.blogimg.jp/pokeruto_narutostorm/imgs/9/d/9df794cc.png','水':'https://ooyake01.com/wp-content/uploads/2019/07/%E6%89%89%E9%96%93.png','土':'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQgUZKzoGoqlDT7mUC9X8fE76pwS8yTZOsQJWSf0JLyzQ&s','風':'https://otakotaku.com/asset/img/character/2017/10/uzumaki-naruto-59dbafb3a0d9ep.jpg','雷':'https://images-na.ssl-images-amazon.com/images/I/71rse6gO0XL._CR550,250,1420,1420_.jpg'};
+const rel={'火':'風','風':'雷','雷':'土','土':'水','水':'火'},typeOrd={'火':1,'水':2,'土':3,'風':4,'雷':5},types=['火','水','土','風','雷'];
+let hands,scores,selected,confirmed,turn,gMode='N',pMode='C',p1D=[],p2D=[],firstPt=null,bannedStr=null;
 
-const types=['火','水','土','風','雷'];
+function selMode(m){gMode=m; document.getElementById('m-norm').classList.toggle('selected',m==='N'); document.getElementById('m-adv').classList.toggle('selected',m==='A');}
+function selPlay(p){pMode=p; document.getElementById('p-com').classList.toggle('selected',p==='C'); document.getElementById('p-pvp').classList.toggle('selected',p==='P');}
+function applyStart(){document.getElementById('menu-screen').style.display='none';initGame();}
 
-function draw(p){
-    const h=document.getElementById(`p${p}-hand`);
-    h.innerHTML='';
-    types.forEach(t=>{
-        const d=document.createElement('div');
-        d.className='card';
-        d.innerHTML=`<img src="${icons[t]}"><div class="card-label">${t}</div>`;
-        h.appendChild(d);
-    });
+function initGame(){
+    hands={1:[...types],2:[...types]}; scores={1:0,2:0}; selected={1:[],2:[]}; confirmed={1:!1,2:!1}; turn=1; firstPt=null; bannedStr=null;
+    document.getElementById('p2-btn').style.visibility=(pMode==='C')?'hidden':'visible';
+    unlockArea(1); unlockArea(2); renderHands();
 }
 
-draw(1);
-draw(2);
-</script>
+function renderHands(){
+    for(let p=1;p<=2;p++){
+        const container = document.getElementById(`p${p}-hand`); container.innerHTML = "";
+        hands[p].forEach(type => {
+            const isSel = selected[p].includes(type);
+            const card = document.createElement("div");
+            card.className = "card" + (isSel ? " selected" : "");
+            card.innerHTML = `<img src="${icons[type]}" onerror="this.style.opacity='0'"><div class="card-label">${type}</div>`;
+            card.onclick = () => { if(!confirmed[p]){ isSel ? selected[p]=selected[p].filter(t=>t!==type) : selected[p].push(type); renderHands(); }};
+            container.appendChild(card);
+        });
+    }
+    const max = (gMode==='N')?3:5;
+    document.getElementById('score-line').innerText = `P1: ${scores[1]} | P2: ${scores[2]} (${turn}/${max}戦目)`;
+}
 
-</body>
-</html>
+function confirmMove(p){
+    const s = selected[p].sort((a,b)=>typeOrd[a]-typeOrd[b]);
+    const comboStr = s.join("+");
+    if(s.length===0) return;
+    if(comboStr === bannedStr){ alert(`封印中：${bannedStr} 以外を出せ！`); return; }
+    if(s.length===2 && !(s.includes('水') && s.includes('風'))){ alert("氷遁のみ可！"); return; }
+    if(s.length===3 && !(s.includes('火') && s.includes('風') && s.includes('土'))){ alert("塵遁のみ可！"); return; }
+    if(p===1) p1D=[...s]; else p2D=[...s];
+    confirmed[p]=!0; selected[p]=[]; renderHands(); lockArea(p);
+    if(confirmed[1]){ if(pMode==='C') setTimeout(comLogic, 500); else if(confirmed[2]) battle(); }
+}
+
+function comLogic(){
+    const h2=hands[2]; let pos=[]; h2.forEach(c=>pos.push([c]));
+    if(h2.includes('水')&&h2.includes('風')) pos.push(['水','風']);
+    if(h2.includes('火')&&h2.includes('風')&&h2.includes('土')) pos.push(['火','風','土']);
+    if(bannedStr) pos = pos.filter(p => p.join("+") !== bannedStr);
+    p2D = pos[Math.floor(Math.random()*pos.length)]; confirmed[2]=!0; battle();
+}
+
+function battle(){
+    const m1=p1D, m2=p2D, s1=m1.join("+"), s2=m2.join("+");
+    let win=0;
+    if(m1.length > m2.length) win=1; else if(m2.length > m1.length) win=2;
+    else if(m1.length===1 && rel[m1[0]]===m2[0]) win=1; else if(m1.length===1 && rel[m2[0]]===m1[0]) win=2;
+    
+    document.getElementById('last-moves').innerText = `P1: [${s1}] vs P2: [${s2}]`;
+    const f=document.getElementById('flash-div'); f.style.animation='none'; setTimeout(()=>{f.style.animation='flash 0.4s'},10);
+
+    if(win!==0){
+        scores[win]++; if(firstPt===null) firstPt=win;
+        document.getElementById('status-msg').innerText = `P${win}の勝利！`;
+        consumeCards(m1, m2);
+    } else {
+        // あいこ時の処理
+        if (s1 === s2) { // 同じ手
+            if (gMode === 'N') {
+                if (turn === 3) { // ★修正：ノーマルの3戦目（最終戦）なら消費して終了
+                    document.getElementById('status-msg').innerText = "3戦目引き分け(消費)"; consumeCards(m1, m2);
+                } else { // それ以外（1,2戦目）は出し直し
+                    document.getElementById('status-msg').innerText = "同じ手であいこ！出し直し";
+                    bannedStr = null; resetTurn(); return;
+                }
+            } else if (gMode === 'A' && turn === 1) { // アドバンス：1戦目のみ封印出し直し
+                bannedStr = s1; document.getElementById('status-msg').innerText = `1戦目あいこ！[${bannedStr}]封印・出し直し`;
+                resetTurn(); return;
+            } else { // アドバンス：2戦目以降、または違う手 -> 消費
+                document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2);
+            }
+        } else { // 違う手の引き分け（常に消費）
+            document.getElementById('status-msg').innerText = "引き分け(消費)"; consumeCards(m1, m2);
+        }
+    }
+
+    renderHands();
+    
+    // 決着判定
+    let isGameOver = false;
+    const limit = (gMode === 'N') ? 3 : 5;
+    if (scores[1] >= 2 || scores[2] >= 2 || turn > limit || hands[1].length === 0) isGameOver = true;
+
+    if(isGameOver) setTimeout(judgeFinal, 600);
+    else setTimeout(resetTurn, 800);
+}
+
+function consumeCards(m1, m2) {
+    m1.forEach(c=>hands[1].splice(hands[1].indexOf(c),1));
+    m2.forEach(c=>hands[2].splice(hands[2].indexOf(c),1));
+    turn++; bannedStr=null;
+}
+
+function resetTurn(){ confirmed={1:!1,2:!1}; p1D=[]; p2D=[]; selected={1:[],2:[]}; unlockArea(1); unlockArea(2); renderHands(); }
+
+function judgeFinal(){
+    let w = 0, res = "";
+    if (scores[1] > scores[2]) { w = 1; res = "スコア優勢"; }
+    else if (scores[2] > scores[1]) { w = 2; res = "スコア優勢"; }
+    else {
+        if (hands[1].length > hands[2].length) { w = 1; res = "同点ですが、手札残数(巻物)により勝利！"; }
+        else if (hands[2].length > hands[1].length) { w = 2; res = "同点ですが、手札残数(巻物)により勝利！"; }
+        else {
+            if (firstPt === 1) { w = 1; res = "先取点により勝利！"; }
+            else if (firstPt === 2) { w = 2; res = "先取点により勝利！"; }
+            else { w = 0; res = "完全な引き分け"; }
+        }
+    }
+    alert(`【試合終了】\n勝者: ${w===0?'なし': 'プレイヤー'+w}\n理由: ${res}\n\nP1: ${scores[1]}点 (残:${hands[1].length})\nP2: ${scores[2]}点 (残:${hands[2].length})`);
+    document.getElementById('menu-screen').style.display='flex';
+}
+function lockArea(p){ document.getElementById(`p${p}-area`).classList.add('waiting'); }
+function unlockArea(p){ document.getElementById(`p${p}-area`).classList.remove('waiting'); }
+</script></body></html>
